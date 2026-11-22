@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCU Curated Watchlist</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --card-bg: #151a23;
+      --card-border: #232b38;
+      --marvel-red: #e62429;
+      --text-main: #f0f3f8;
+      --text-muted: #8b98a9;
+      --accent-gold: #f5a623;
+      --badge-full: #10b981;
+      --badge-summary: #f59e0b;
+      --badge-end: #8b5cf6;
+      --status-watched: #059669;
+      --status-watching: #3b82f6;
+      --status-not: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 24px 16px 80px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-badge {
+      display: inline-block;
+      background: var(--marvel-red);
+      color: #fff;
+      font-weight: 900;
+      font-size: 14px;
+      letter-spacing: 2px;
+      padding: 4px 12px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    /* Stats & Progress Bar */
+    .dashboard-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-num {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .progress-wrapper {
+      background: #1e2633;
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-fill {
+      background: linear-gradient(90deg, var(--marvel-red), #ff6b6b);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Controls: Search & Filters */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 240px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--marvel-red);
+    }
+
+    .phase-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .filter-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: var(--marvel-red);
+      color: #fff;
+      border-color: var(--marvel-red);
+    }
+
+    /* List of Cards */
+    .cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .movie-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 16px;
+      align-items: center;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .movie-card:hover {
+      border-color: #384556;
+    }
+
+    .movie-card.watched {
+      opacity: 0.75;
+      background: rgba(21, 26, 35, 0.6);
+    }
+
+    .card-num {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .card-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .meta-tag {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .phase-badge {
+      background: #232d3d;
+      color: #9cb3d1;
+    }
+
+    .how-badge.full {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .how-badge.summary {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .how-badge.end {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .card-meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .rating-stars {
+      color: var(--accent-gold);
+      font-weight: 700;
+    }
+
+    .card-notes {
+      margin-top: 4px;
+      font-size: 0.85rem;
+      color: #a0aec0;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 3px solid var(--card-border);
+    }
+
+    /* Actions / Status dropdown */
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .status-select {
+      background: #1e2633;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .status-select.watched {
+      background: rgba(5, 150, 105, 0.2);
+      color: #34d399;
+      border-color: #059669;
+    }
+
+    .status-select.watching {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: #2563eb;
+    }
+
+    .status-select.not-watched {
+      background: #1e2633;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 640px) {
+      .movie-card {
+        grid-template-columns: 32px 1fr;
+      }
+      .card-actions {
+        grid-column: 1 / -1;
+        align-items: stretch;
+      }
+      .status-select {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo-badge">Marvel Studios</div>
+      <h1>Curated MCU Watchlist</h1>
+      <p class="subtitle">Official MCU timeline organized by Phase • Includes Spider-Man (2002) & TASM 2 before Far From Home • Watch instruction notes included</p>
+    </header>
+
+    <!-- Stats & Progress -->
+    <div class="dashboard-panel">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="total-count">43</div>
+          <div class="stat-label">Total Titles</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="watched-count">2</div>
+          <div class="stat-label">Watched</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="watching-count">1</div>
+          <div class="stat-label">Currently Watching</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="remaining-count">40</div>
+          <div class="stat-label">To Watch</div>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">
+          <span>PROGRESS</span>
+          <span id="percent-label">5%</span>
+        </div>
+        <div class="progress-wrapper">
+          <div class="progress-fill" id="progress-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" id="search-input" class="search-input" placeholder="Search title or character...">
+      </div>
+      <div class="phase-filters" id="phase-filters">
+        <button class="filter-btn active" data-phase="all">All (43)</button>
+        <button class="filter-btn" data-phase="Phase 1">Phase 1</button>
+        <button class="filter-btn" data-phase="Phase 2">Phase 2</button>
+        <button class="filter-btn" data-phase="Phase 3">Phase 3</button>
+        <button class="filter-btn" data-phase="Phase 4">Phase 4</button>
+        <button class="filter-btn" data-phase="Phase 5">Phase 5</button>
+        <button class="filter-btn" data-phase="Phase 6">Phase 6</button>
+      </div>
+    </div>
+
+    <!-- Movie List -->
+    <div class="cards-list" id="cards-container"></div>
+  </div>
+
+  <script>
+    // Exact list of 43 titles from your sheet
+    const moviesData = [
+      { id: 1, title: "Iron Man", date: "May 2, 2008", format: "Movie", phase: "Phase 1", how: "Watch Summary", rating: 5, status: "Watched", notes: "Start of the MCU. Watch post-credits scene (Nick Fury)." },
+      { id: 2, title: "The Incredible Hulk", date: "June 13, 2008", format: "Movie", phase: "Phase 1", how: "Watch Summary", rating: 3, status: "Watched", notes: "Can watch a 5-min summary; Bruce Banner was recast later." },
+      { id: 3, title: "Iron Man 2", date: "May 7, 2010", format: "Movie", phase: "Phase 1", how: "Watch Full Movie", rating: 4, status: "Watching", notes: "Introduces Black Widow & War Machine. Watch post-credits scene." },
+      { id: 4, title: "Thor", date: "May 6, 2011", format: "Movie", phase: "Phase 1", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Introduces Thor, Loki & Asgard. Watch post-credits scene." },
+      { id: 5, title: "Captain America: The First Avenger", date: "July 22, 2011", format: "Movie", phase: "Phase 1", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "Introduces Steve Rogers, Bucky & the Tesseract." },
+      { id: 6, title: "The Avengers", date: "May 4, 2012", format: "Movie", phase: "Phase 1", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Phase 1 finale! Watch both mid-credits and post-credits scenes." },
+      { id: 7, title: "Iron Man 3", date: "May 3, 2013", format: "Movie", phase: "Phase 2", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Follows Tony Stark after the Battle of New York." },
+      { id: 8, title: "Thor: The Dark World", date: "November 8, 2013", format: "Movie", phase: "Phase 2", how: "Watch Full Movie", rating: 3, status: "Not Watched", notes: "A summary covers the Reality Stone (Aether) & Loki's twist." },
+      { id: 9, title: "Captain America: The Winter Soldier", date: "April 4, 2014", format: "Movie", phase: "Phase 2", how: "Watch Summary", rating: 5, status: "Not Watched", notes: "Essential MCU turning point — changes S.H.I.E.L.D. forever." },
+      { id: 10, title: "Guardians of the Galaxy", date: "August 1, 2014", format: "Movie", phase: "Phase 2", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "Watch before Infinity War only — it's not important." },
+      { id: 11, title: "Avengers: Age of Ultron", date: "May 1, 2015", format: "Movie", phase: "Phase 2", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Introduces Wanda, Vision & sets up Civil War." },
+      { id: 12, title: "Captain America: Civil War", date: "May 6, 2016", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Must-watch: splits the Avengers and introduces MCU Spider-Man & Black Panther." },
+      { id: 13, title: "Doctor Strange", date: "November 4, 2016", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Introduces magic, the Multiverse concept & the Time Stone." },
+      { id: 14, title: "Guardians of the Galaxy Vol. 2", date: "May 5, 2017", format: "Movie", phase: "Phase 3", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "Watch before Infinity War only — it's not important." },
+      { id: 15, title: "Spider-Man: Homecoming", date: "July 7, 2017", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "First solo MCU Spider-Man movie after Civil War." },
+      { id: 16, title: "Thor: Ragnarok", date: "November 3, 2017", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Essential lead-in directly into Avengers: Infinity War." },
+      { id: 17, title: "Black Panther", date: "February 16, 2018", format: "Movie", phase: "Phase 3", how: "Watch Summary", rating: 5, status: "Not Watched", notes: "Explores Wakanda & T'Challa ahead of Infinity War." },
+      { id: 18, title: "Avengers: Infinity War", date: "April 27, 2018", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Massive crossover featuring Spider-Man — watch post-credits scene!" },
+      { id: 19, title: "Captain Marvel", date: "March 8, 2019", format: "Movie", phase: "Phase 3", how: "watch it in the end", rating: 4, status: "Not Watched", notes: "Set in the 1990s; mid-credits scene connects right into Endgame." },
+      { id: 20, title: "Avengers: Endgame", date: "April 26, 2019", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Epic conclusion to the Infinity Saga (Phases 1–3)." },
+      { id: 21, title: "Spider-Man for no way home", date: "May 3, 2002", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Tobey Maguire's origin story vs. Green Goblin; custom placed before Far From Home." },
+      { id: 22, title: "The Amazing Spider-Man 2 for no way home", date: "May 2, 2014", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Features Electro & Gwen Stacy; custom placed before Far From Home." },
+      { id: 23, title: "Spider-Man: Far From Home", date: "July 2, 2019", format: "Movie", phase: "Phase 3", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Epilogue to Phase 3; watch both post-credits scenes!" },
+      { id: 24, title: "WandaVision (Season 1)", date: "January 15, 2021", format: "Series", phase: "Phase 4", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "9 episodes. Essential setup for Doctor Strange in the Multiverse of Madness." },
+      { id: 25, title: "Loki (Season 1)", date: "June 9, 2021", format: "Series", phase: "Phase 4", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "6 episodes. Crucial introduction to the Multiverse & TVA." },
+      { id: 26, title: "What If...? (Season 1)", date: "August 11, 2021", format: "Series", phase: "Phase 4", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "9 animated episodes exploring alternate Multiverse timelines." },
+      { id: 27, title: "Shang-Chi and the Legend of the Ten Rings", date: "September 3, 2021", format: "Movie", phase: "Phase 4", how: "Watch Summary", rating: 5, status: "Not Watched", notes: "Introduces Shang-Chi; watch both post-credits scenes." },
+      { id: 28, title: "Eternals", date: "November 5, 2021", format: "Movie", phase: "Phase 4", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "Introduces the Eternals and Celestials." },
+      { id: 29, title: "Spider-Man: No Way Home", date: "December 17, 2021", format: "Movie", phase: "Phase 4", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Unites Tobey Maguire, Andrew Garfield & Tom Holland's Spider-Men!" },
+      { id: 30, title: "Doctor Strange in the Multiverse of Madness", date: "May 6, 2022", format: "Movie", phase: "Phase 4", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Watch WandaVision first for full context." },
+      { id: 31, title: "Thor: Love and Thunder", date: "July 8, 2022", format: "Movie", phase: "Phase 4", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "Can watch a summary or full movie for Thor's post-Endgame arc." },
+      { id: 32, title: "She-Hulk: Attorney at Law (Season 1)", date: "August 18, 2022", format: "Series", phase: "Phase 4", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "9 episodes. Features Wong, Abomination & Daredevil." },
+      { id: 33, title: "Black Panther: Wakanda Forever", date: "November 11, 2022", format: "Movie", phase: "Phase 4", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "Introduces Namor & Riri Williams (Ironheart)." },
+      { id: 34, title: "Guardians of the Galaxy Vol. 3", date: "May 5, 2023", format: "Movie", phase: "Phase 5", how: "Watch Summary", rating: 3, status: "Not Watched", notes: "Rocket's origin story and final Guardians adventure." },
+      { id: 35, title: "Loki (Season 2)", date: "October 5, 2023", format: "Series", phase: "Phase 5", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "6 episodes. Essential Multiverse finale for Loki's arc." },
+      { id: 36, title: "What If...? (Season 2)", date: "December 22, 2023", format: "Series", phase: "Phase 5", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "9 animated episodes exploring further alternate timelines." },
+      { id: 37, title: "Deadpool & Wolverine", date: "July 26, 2024", format: "Movie", phase: "Phase 5", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Major Multiverse crossover bringing Deadpool & Wolverine into the MCU." },
+      { id: 38, title: "Captain America: Brave New World", date: "February 14, 2025", format: "Movie", phase: "Phase 5", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "Sam Wilson's first solo movie as Captain America." },
+      { id: 39, title: "Thunderbolts*", date: "May 2, 2025", format: "Movie", phase: "Phase 5", how: "Watch Summary", rating: 4, status: "Not Watched", notes: "Anti-hero team-up (Yelena, Bucky, Red Guardian, US Agent, Sentry)." },
+      { id: 40, title: "The Fantastic Four: First Steps", date: "July 25, 2025", format: "Movie", phase: "Phase 6", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Introduces Marvel's First Family & Galactus ahead of Avengers: Doomsday." },
+      { id: 41, title: "The Punisher: One Last Kill", date: "May 12, 2026", format: "Special", phase: "Phase 6", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "Marvel Television Special Presentation starring Frank Castle." },
+      { id: 42, title: "Spider-Man: Brand New Day", date: "July 31, 2026", format: "Movie", phase: "Phase 6", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "4th Tom Holland MCU Spider-Man film (features Hulk & Punisher)." },
+      { id: 43, title: "Avengers: Doomsday", date: "December 18, 2026", format: "Movie", phase: "Phase 6", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Major Avengers event featuring Doctor Doom." },
+      { id: 44, title: "VisionQuest (Season 1)", date: "October 13, 2026", format: "Series", phase: "Phase 6", how: "Watch Full Movie", rating: 4, status: "Not Watched", notes: "8 episodes following White Vision after WandaVision." },
+      { id: 45, title: "Avengers: Secret Wars", date: "December 17, 2027", format: "Movie", phase: "Phase 6", how: "Watch Full Movie", rating: 5, status: "Not Watched", notes: "Upcoming finale of the Multiverse Saga." }
+    ];
+
+    // Local Storage support so your friend's progress stays saved!
+    const savedStatuses = JSON.parse(localStorage.getItem('mcu_watchlist_statuses') || '{}');
+    moviesData.forEach(m => {
+      if (savedStatuses[m.id]) {
+        m.status = savedStatuses[m.id];
+      }
+    });
+
+    let currentPhase = 'all';
+    let searchQuery = '';
+
+    function getStars(rating) {
+      return '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+    }
+
+    function getHowBadgeClass(how) {
+      if (how.toLowerCase().includes('summary')) return 'summary';
+      if (how.toLowerCase().includes('end')) return 'end';
+      return 'full';
+    }
+
+    function getStatusClass(status) {
+      if (status === 'Watched') return 'watched';
+      if (status === 'Watching') return 'watching';
+      return 'not-watched';
+    }
+
+    function renderList() {
+      const container = document.getElementById('cards-container');
+      container.innerHTML = '';
+
+      const filtered = moviesData.filter(m => {
+        const matchesPhase = currentPhase === 'all' || m.phase === currentPhase;
+        const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              m.notes.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesPhase && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px;">No titles found matching your search.</div>`;
+        return;
+      }
+
+      filtered.forEach(m => {
+        const card = document.createElement('div');
+        card.className = `movie-card ${m.status === 'Watched' ? 'watched' : ''}`;
+
+        card.innerHTML = `
+          <div class="card-num">#${m.id}</div>
+          <div class="card-info">
+            <div class="card-title-row">
+              <span class="card-title">${m.title}</span>
+              <span class="meta-tag phase-badge">${m.phase}</span>
+              <span class="meta-tag how-badge ${getHowBadgeClass(m.how)}">${m.how}</span>
+            </div>
+            <div class="card-meta-line">
+              <span>📅 ${m.date}</span>
+              <span>🎬 ${m.format}</span>
+              <span class="rating-stars">${getStars(m.rating)} (${m.rating}/5)</span>
+            </div>
+            ${m.notes ? `<div class="card-notes">💡 <strong>Note:</strong> ${m.notes}</div>` : ''}
+          </div>
+          <div class="card-actions">
+            <select class="status-select ${getStatusClass(m.status)}" data-id="${m.id}">
+              <option value="Not Watched" ${m.status === 'Not Watched' ? 'selected' : ''}>Not Watched</option>
+              <option value="Watching" ${m.status === 'Watching' ? 'selected' : ''}>Watching</option>
+              <option value="Watched" ${m.status === 'Watched' ? 'selected' : ''}>Watched</option>
+            </select>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      updateStats();
+    }
+
+    function updateStats() {
+      const total = moviesData.length;
+      const watched = moviesData.filter(m => m.status === 'Watched').length;
+      const watching = moviesData.filter(m => m.status === 'Watching').length;
+      const remaining = total - watched;
+      const percent = Math.round((watched / total) * 100);
+
+      document.getElementById('total-count').textContent = total;
+      document.getElementById('watched-count').textContent = watched;
+      document.getElementById('watching-count').textContent = watching;
+      document.getElementById('remaining-count').textContent = remaining;
+      document.getElementById('percent-label').textContent = `${percent}% (${watched}/${total})`;
+      document.getElementById('progress-bar').style.width = `${percent}%`;
+    }
+
+    // Event Delegation for status change
+    document.getElementById('cards-container').addEventListener('change', (e) => {
+      if (e.target.classList.contains('status-select')) {
+        const id = parseInt(e.target.getAttribute('data-id'), 10);
+        const newStatus = e.target.value;
+        const item = moviesData.find(m => m.id === id);
+        if (item) {
+          item.status = newStatus;
+          savedStatuses[id] = newStatus;
+          localStorage.setItem('mcu_watchlist_statuses', JSON.stringify(savedStatuses));
+          renderList();
+        }
+      }
+    });
+
+    // Phase Filter Clicks
+    document.getElementById('phase-filters').addEventListener('click', (e) => {
+      if (e.target.classList.contains('filter-btn')) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        currentPhase = e.target.getAttribute('data-phase');
+        renderList();
+      }
+    });
+
+    // Search filter input
+    document.getElementById('search-input').addEventListener('input', (e) => {
+      searchQuery = e.target.value.trim();
+      renderList();
+    });
+
+    // Initial render
+    renderList();
+  </script>
+</body>
+</html>
